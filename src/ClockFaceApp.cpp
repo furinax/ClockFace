@@ -3,6 +3,8 @@
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/svg/Svg.h"
+#include <time.h>
+#include <sys/utime.h>
 
 using namespace ci;
 using namespace ci::app;
@@ -14,38 +16,58 @@ class ClockFaceApp : public App {
 	void mouseDown( MouseEvent event ) override;
 	void update() override;
 	void draw() override;
+	void drawHand(const float radians);
+	void updateClock();
 
 	ci::ImageSourceRef imageSource;
-	gl::Texture2dRef mTexture;
+	gl::Texture2dRef mHandTex;
+	std::time_t mCurrentTime;
+	long mInitialSeconds;
 };
 
 void ClockFaceApp::setup()
 {
 	imageSource = loadImage(loadAsset("clock_face.png"));
-	mTexture = gl::Texture::create(imageSource);
+	mHandTex = gl::Texture::create(imageSource);
 	setWindowSize(1000, 1000);
+	updateClock();
 }
 
 void ClockFaceApp::mouseDown( MouseEvent event )
 {
 }
 
+void ClockFaceApp::updateClock()
+{
+	mCurrentTime = std::time(0);
+}
+
 void ClockFaceApp::update()
 {
+	updateClock();
+	 
+}
+
+void ClockFaceApp::drawHand(const float radians)
+{
+	gl::pushModelView();
+	gl::translate(getWindowWidth() / 2, getWindowHeight() / 2);
+	gl::rotate(radians);
+	gl::translate(-250, -250);
+	gl::draw(mHandTex);
+	gl::popModelView();
 }
 
 void ClockFaceApp::draw()
 {
 	gl::clear( Color( 0, 1, 0 ) ); 
-	gl::pushModelView();
+	struct tm *tm = localtime(&mCurrentTime);
+	double intpart;
+	double millis = modf(getElapsedSeconds(), &intpart);
+	drawHand(float((tm->tm_sec + millis) * 2.f * M_PI / 60.f)); //seconds
+	drawHand(float(tm->tm_min * 2.f * M_PI / 60.f)); //mins
+	drawHand(float(tm->tm_hour * 2.f * M_PI / 24.f)); //hours
 
-	gl::translate(getWindowWidth()/2, getWindowHeight()/2);
-	gl::rotate(float(getElapsedSeconds() * 2.f * M_PI/60.f));
-	gl::translate(-250, -250);
-
-	gl::draw(mTexture);
-
-	gl::popModelView();
 }
 
 CINDER_APP( ClockFaceApp, RendererGl )
