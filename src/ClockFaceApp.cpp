@@ -31,6 +31,7 @@ void ClockFaceApp::setup()
 	mHandTex = gl::Texture::create(imageSource);
 	setWindowSize(1000, 1000);
 	updateClock();
+	mInitialSeconds = localtime(&mCurrentTime)->tm_sec;
 }
 
 void ClockFaceApp::mouseDown( MouseEvent event )
@@ -62,9 +63,7 @@ void ClockFaceApp::draw()
 {
 	gl::clear( Color( 0, 1, 0 ) ); 
 	struct tm *tm = localtime(&mCurrentTime);
-	double intpart;
-	double millis = modf(getElapsedSeconds(), &intpart);
-	drawHand(float((tm->tm_sec + millis) * 2.f * M_PI / 60.f)); //seconds
+	drawHand(float((mInitialSeconds + getElapsedSeconds()) * 2.f * M_PI / 60.f)); //seconds
 	drawHand(float(tm->tm_min * 2.f * M_PI / 60.f)); //mins
 	drawHand(float(tm->tm_hour * 2.f * M_PI / 24.f)); //hours
 
